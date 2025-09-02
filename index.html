@@ -113,15 +113,28 @@ Changes:
   <footer>v1.1.5</footer>
 
   <script>
-    const sentences = [
-      "The cat is sleeping on bed.",
-      "She is reading a small book.",
-      "We are playing with a red ball.",
-      "The dog runs across the park.",
-      "Birds are flying high in sky.",
-      "A boy is eating sweet mango."
-    ];
-    let currentSentence = "";
+  let sentences = [];
+  let currentSentence = "";
+
+  // ✅ Load sentences.txt
+  async function loadSentences() {
+    try {
+      const response = await fetch("sentences.txt");
+      const text = await response.text();
+      sentences = text.split("\n").map(line => line.trim()).filter(Boolean);
+      console.log("Sentences loaded:", sentences.length);
+    } catch (err) {
+      console.error("Failed to load sentences:", err);
+    }
+  }
+
+  function getRandomSentence() {
+    if (sentences.length === 0) return "No sentences loaded!";
+    return sentences[Math.floor(Math.random() * sentences.length)];
+  }
+
+  // ✅ Call this once page loads
+  window.addEventListener("DOMContentLoaded", loadSentences);
     let recognition, transcripts = [];
     let mediaRecorder, audioChunks = [];
 
