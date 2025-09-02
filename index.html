@@ -17,56 +17,10 @@
       overflow: hidden;
       text-align: center;
     }
-    #extras {
-      font-size: clamp(18px, 5vw, 28px);
-      color: orange;
-      margin-top: 6px;
-      opacity: 0;
-      transition: opacity 0.8s ease;
-    }
-
-    #accuracy {
-      margin-top: 10px;
-      width: 80%;
-      max-width: 400px;
-      height: 30px;
-      background: #ddd;
-      border-radius: 20px;
-      overflow: hidden;
-      margin-left: auto;
-      margin-right: auto;
-      position: relative;
-      opacity: 0;
-      transition: opacity 0.8s ease;
-    }
-
-    #accuracy-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(135deg, #ffcc00, #ff6600);
-      transition: width 1s ease;
-    }
-    #accuracy-label {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      font-weight: bold;
-      color: black;
-    }
     h1 {
       color: white;
       font-size: clamp(24px, 6vw, 38px);
       margin: 10px;
-    }
-    #sky {
-      position: relative;
-      flex: 1;
-      width: 100%;
-      max-width: 600px;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
     }
     #sentence {
       font-size: clamp(28px, 8vw, 54px);
@@ -90,10 +44,44 @@
       border-radius: 10px;
       padding: 6px 10px;
       max-width: 95%;
-      margin: 5px auto 15px;
+      margin: 5px auto 10px;
       opacity: 0;
       transition: opacity 0.8s ease;
-      z-index: 4;
+    }
+    #extras {
+      font-size: clamp(18px, 5vw, 28px);
+      color: orange;
+      margin-top: 6px;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    #accuracy {
+      margin-top: 10px;
+      width: 80%;
+      max-width: 400px;
+      height: 30px;
+      background: #ddd;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    #accuracy-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(135deg, #ffcc00, #ff6600);
+      transition: width 1s ease;
+    }
+    #accuracy-label {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: bold;
+      color: black;
     }
     .correct {
       background: lightgreen;
@@ -112,6 +100,15 @@
       color: white;
       border-radius: 6px;
       padding: 2px 4px;
+    }
+    #sky {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
     }
     .rocket {
       width: 60px;
@@ -166,7 +163,6 @@
       cursor: pointer;
       margin: 10px 0;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
     }
     .launch-btn:hover {
       transform: scale(1.05);
@@ -175,7 +171,7 @@
       display: flex;
       gap: 20px;
       justify-content: center;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
     .round-btn {
       width: 90px;
@@ -187,14 +183,12 @@
       color: white;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
     }
-    .speak-btn {
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-    }
-    .listen-btn {
-      background: linear-gradient(135deg, #28a745, #218838);
-    }
-    .stop-btn {
-      background: linear-gradient(135deg, #ff0000, #cc0000);
+    .speak-btn { background: linear-gradient(135deg, #00c6ff, #0072ff); }
+    .listen-btn { background: linear-gradient(135deg, #28a745, #218838); }
+    .stop-btn { background: linear-gradient(135deg, #ff0000, #cc0000); }
+    #playback {
+      margin-top: 12px;
+      display: none;
     }
     footer {
       font-size: 10px;
@@ -212,10 +206,11 @@
   <div id="sentence">Press Launch!</div>
   <div id="spoken"></div>
   <div id="extras"></div>
-<div id="accuracy">
-  <div id="accuracy-bar"></div>
-  <div id="accuracy-label">0/10</div>
-</div>
+  <div id="accuracy">
+    <div id="accuracy-bar"></div>
+    <div id="accuracy-label">0/10</div>
+  </div>
+  <audio id="playback" controls></audio>
 
   <div id="sky">
     <div class="rocket" id="rocket">
@@ -238,7 +233,7 @@
   <audio id="rocketRoar" src="https://actions.google.com/sounds/v1/transportation/rocket_launch.ogg"></audio>
   <audio id="kidsCheer" src="https://actions.google.com/sounds/v1/crowds/children_cheer.ogg"></audio>
 
-  <footer id="footer">v1.0.2</footer> <!-- ✅ Version updated -->
+  <footer id="footer">v1.0.3</footer>
 
   <script>
     const sentences = [
@@ -252,7 +247,9 @@
 
     let currentSentence = "";
     let recognition;
-    let transcripts = []; // ✅ collect all attempts
+    let transcripts = [];
+    let mediaRecorder;
+    let audioChunks = [];
 
     function getRandomSentence() {
       return sentences[Math.floor(Math.random() * sentences.length)];
@@ -263,14 +260,16 @@
       const flames = document.getElementById("flames");
       const sentenceEl = document.getElementById("sentence");
       const spokenEl = document.getElementById("spoken");
+      const extrasEl = document.getElementById("extras");
 
       sentenceEl.style.opacity = 0;
       sentenceEl.textContent = "";
       spokenEl.style.opacity = 0;
       spokenEl.textContent = "";
+      extrasEl.style.opacity = 0;
 
       flames.style.opacity = 1;
-      rocket.style.bottom = "180px";  
+      rocket.style.bottom = "180px";
       document.getElementById("rocketRoar").play();
 
       setTimeout(() => {
@@ -295,20 +294,17 @@
       speechSynthesis.speak(msg);
     }
 
-    function startListening() {
+    async function startListening() {
       if (!currentSentence) {
         alert("Launch the rocket first to get a sentence!");
         return;
       }
 
       if (recognition) {
-        recognition.onresult = null;
-        recognition.onerror = null;
-        recognition.onend = null;
         recognition.stop();
       }
 
-      transcripts = []; // reset
+      transcripts = [];
       recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = "en-IN";
       recognition.interimResults = true;
@@ -325,35 +321,55 @@
         clearTimeout(silenceTimer);
         silenceTimer = setTimeout(() => {
           recognition.stop();
-        }, 3000); // ✅ wait longer idle (3s)
+          if (mediaRecorder) mediaRecorder.stop();
+        }, 3000);
       };
 
       recognition.onend = () => {
         if (transcripts.length > 0) {
           let longest = transcripts.reduce((a, b) => (b.split(" ").length > a.split(" ").length ? b : a));
           showComparison(currentSentence, longest);
-        } else {
-          alert("No speech detected. Try again!");
         }
       };
 
-      recognition.onerror = (event) => {
-        alert("Error: " + event.error);
-      };
-
       recognition.start();
+
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = (e) => {
+          audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const playback = document.getElementById("playback");
+          playback.src = audioUrl;
+          playback.style.display = "block";
+        };
+
+        mediaRecorder.start();
+      } catch (err) {
+        console.error("Microphone access denied:", err);
+        alert("Microphone access is required.");
+      }
     }
 
     function stopListening() {
-      if (recognition) {
-        recognition.stop(); // ✅ manually stop
+      if (recognition) recognition.stop();
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
       }
     }
 
     function showComparison(expected, spoken) {
       const expectedWords = expected.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
       const spokenWords = spoken.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
-      
+
       let resultHTML = "";
       let correctCount = 0;
 
@@ -377,7 +393,6 @@
         extrasEl.style.opacity = 0;
       }
 
-      // Show expected with highlights
       const sentenceEl = document.getElementById("sentence");
       const spokenEl = document.getElementById("spoken");
 
@@ -387,17 +402,15 @@
       spokenEl.textContent = "You said: " + spoken;
       spokenEl.style.opacity = 1;
 
-      // Accuracy progress bar
       let accuracy = Math.round((correctCount / expectedWords.length) * 10);
       const accuracyEl = document.getElementById("accuracy");
       const bar = document.getElementById("accuracy-bar");
       const label = document.getElementById("accuracy-label");
 
       accuracyEl.style.opacity = 1;
-      bar.style.width = (accuracy * 10) + "%"; // 0–100%
+      bar.style.width = (accuracy * 10) + "%";
       label.textContent = accuracy + "/10";
     }
-
   </script>
 </body>
 </html>
