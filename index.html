@@ -1,5 +1,5 @@
 <!-- 
-Version: v1.1.3
+Version: v1.1.4
 Changes:
 - Added status label (Listening… / Processing… / Done)
 - Ensured clean stop order: recognition stops first, then mediaRecorder stops
@@ -71,7 +71,7 @@ Changes:
     .listen-btn { background: linear-gradient(135deg, #28a745, #218838); }
     .stop-btn { background: linear-gradient(135deg, #ff0000, #cc0000); }
 
-    footer { font-size: 10px; color: rgba(255,255,255,0.6); margin-top: auto; padding: 6px; font-family: monospace; }
+    footer { font-size: 10px; color: rgba(255,255,255,0.6); position: fixed; bottom: 4px; left: 8px; font-family: monospace; }
   </style>
 </head>
 <body>
@@ -108,7 +108,7 @@ Changes:
   <audio id="rocketRoar" src="https://actions.google.com/sounds/v1/transportation/rocket_launch.ogg"></audio>
   <audio id="kidsCheer" src="https://actions.google.com/sounds/v1/crowds/children_cheer.ogg"></audio>
 
-  <footer>v1.1.3</footer>
+  <footer>v1.1.4</footer>
 
   <script>
     const sentences = [
@@ -165,7 +165,9 @@ Changes:
       transcripts = [];
 
       recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognition.lang = "en-IN"; recognition.interimResults = true;
+      recognition.lang = "en-IN";
+      recognition.interimResults = false;
+      recognition.continuous = true;
 
       let silenceTimer;
       setStatus("🎤 Listening...");
@@ -175,7 +177,7 @@ Changes:
           if (event.results[i].isFinal) transcripts.push(event.results[i][0].transcript.trim());
         }
         clearTimeout(silenceTimer);
-        silenceTimer = setTimeout(() => recognition.stop(), 3000);
+        silenceTimer = setTimeout(() => recognition.stop(), 5000);
       };
 
       recognition.onend = () => {
