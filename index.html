@@ -1,10 +1,9 @@
 <!-- 
-Version: v1.1.0
+Version: v1.1.1
 Changes:
-- Fixed issue where corrections didn’t show after adding recording
-- Now: SpeechRecognition runs first → correction shown
-- After recognition stops, MediaRecorder captures and shows playback
-- Sentence/results panel still above rocket
+- Faster rocket launch
+- After launch → only show sentence
+- Corrections, extras, progress, playback shown only AFTER recording ends
 -->
 
 <!DOCTYPE html>
@@ -32,34 +31,31 @@ Changes:
       margin: 12px;
     }
 
-    /* ✅ Result Panel */
-    #result-panel {
+    #sentence {
+      font-size: clamp(28px, 8vw, 54px);
+      font-weight: bold;
+      color: white;
+      background: rgba(0,0,0,0.6);
+      border-radius: 12px;
+      padding: 8px 14px;
+      max-width: 95%;
+      margin: 12px auto;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    /* ✅ Results shown only after recording */
+    #results {
+      display: none;
       margin: 10px auto;
       padding: 12px;
       background: rgba(0,0,0,0.5);
       border-radius: 14px;
       max-width: 95%;
-      display: none;
       word-wrap: break-word;
     }
-    #result-panel > div, #result-panel audio {
-      margin: 6px 0;
-    }
-
-    #sentence {
-      font-size: clamp(28px, 8vw, 54px);
-      font-weight: bold;
-      color: white;
-    }
-    #spoken {
-      font-size: clamp(20px, 6vw, 32px);
-      font-weight: bold;
-      color: #fffacd;
-    }
-    #extras {
-      font-size: clamp(18px, 5vw, 28px);
-      color: orange;
-    }
+    #spoken { font-size: clamp(20px, 6vw, 32px); font-weight: bold; color: #fffacd; margin-top: 6px; }
+    #extras { font-size: clamp(18px, 5vw, 28px); color: orange; margin-top: 6px; }
     #accuracy {
       margin-top: 10px;
       width: 80%;
@@ -72,20 +68,8 @@ Changes:
       margin-right: auto;
       position: relative;
     }
-    #accuracy-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(135deg, #ffcc00, #ff6600);
-      transition: width 1s ease;
-    }
-    #accuracy-label {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      font-weight: bold;
-      color: black;
-    }
+    #accuracy-bar { height: 100%; width: 0%; background: linear-gradient(135deg, #ffcc00, #ff6600); transition: width 1s ease; }
+    #accuracy-label { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-weight: bold; color: black; }
 
     .correct { background: lightgreen; color: black; border-radius: 6px; padding: 2px 4px; }
     .wrong { background: #ff4e4e; color: white; border-radius: 6px; padding: 2px 4px; }
@@ -106,8 +90,7 @@ Changes:
       margin: auto;
       position: relative;
       bottom: 0;
-      transition: bottom 2s ease-in;
-      z-index: 1;
+      transition: bottom 1s ease-in; /* ⬅️ Faster */
     }
     .rocket::before {
       content: "🚀";
@@ -188,9 +171,10 @@ Changes:
 <body>
   <h1>🚀 Launch the Rocket to Read! 🚀</h1>
 
-  <!-- ✅ Sentence + Results Above Rocket -->
-  <div id="result-panel">
-    <div id="sentence">Press Launch!</div>
+  <div id="sentence">Press Launch!</div>
+
+  <!-- ✅ Results hidden until recording -->
+  <div id="results">
     <div id="spoken"></div>
     <div id="extras"></div>
     <div id="accuracy">
@@ -221,7 +205,7 @@ Changes:
   <audio id="rocketRoar" src="https://actions.google.com/sounds/v1/transportation/rocket_launch.ogg"></audio>
   <audio id="kidsCheer" src="https://actions.google.com/sounds/v1/crowds/children_cheer.ogg"></audio>
 
-  <footer>v1.1.0</footer>
+  <footer>v1.1.1</footer>
 
   <script>
     const sentences = [
@@ -248,7 +232,7 @@ Changes:
       const flames = document.getElementById("flames");
       const sentenceEl = document.getElementById("sentence");
 
-      document.getElementById("result-panel").style.display = "none";
+      document.getElementById("results").style.display = "none";
 
       flames.style.opacity = 1;
       rocket.style.bottom = "180px";  
@@ -260,10 +244,10 @@ Changes:
 
         currentSentence = getRandomSentence();
         sentenceEl.textContent = currentSentence;
-        document.getElementById("result-panel").style.display = "block";
+        sentenceEl.style.opacity = 1;
 
         document.getElementById("kidsCheer").play();
-      }, 2000);
+      }, 1200); // ⬅️ Faster finish
     }
 
     function speakSentence() {
@@ -303,26 +287,9 @@ Changes:
         if (transcripts.length > 0) {
           let longest = transcripts.reduce((a, b) => (b.split(" ").length > a.split(" ").length ? b : a));
           showComparison(currentSentence, longest);
-
-          // ✅ Now record after recognition stops
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-            mediaRecorder.onstop = () => {
-              const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-              const audioUrl = URL.createObjectURL(audioBlob);
-              const playback = document.getElementById("playback");
-              playback.src = audioUrl;
-              playback.style.display = "block";
-              playback.load();
-            };
-            mediaRecorder.start();
-            setTimeout(() => mediaRecorder.stop(), 3000); // record short snippet
-          } catch (err) {
-            console.error("Mic error:", err);
-          }
+          await recordPlayback(); // ✅ record after recognition
+        } else {
+          alert("No speech detected. Try again!");
         }
       };
 
@@ -334,8 +301,29 @@ Changes:
       if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
     }
 
+    async function recordPlayback() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const playback = document.getElementById("playback");
+          playback.src = audioUrl;
+          playback.style.display = "block";
+          playback.load();
+        };
+        mediaRecorder.start();
+        setTimeout(() => mediaRecorder.stop(), 3000);
+      } catch (err) {
+        console.error("Mic error:", err);
+      }
+    }
+
     function showComparison(expected, spoken) {
-      document.getElementById("result-panel").style.display = "block";
+      document.getElementById("results").style.display = "block";
 
       const expectedWords = expected.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
       const spokenWords = spoken.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
@@ -353,8 +341,7 @@ Changes:
       });
 
       let extras = spokenWords.filter(w => !expectedWords.includes(w));
-      const extrasEl = document.getElementById("extras");
-      extrasEl.innerHTML = extras.length > 0 ? "Extras: " + extras.map(w => `<span class="extra">${w}</span>`).join(" ") : "";
+      document.getElementById("extras").innerHTML = extras.length > 0 ? "Extras: " + extras.map(w => `<span class="extra">${w}</span>`).join(" ") : "";
 
       document.getElementById("sentence").innerHTML = resultHTML.trim();
       document.getElementById("spoken").textContent = "You said: " + spoken;
