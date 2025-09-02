@@ -5,20 +5,21 @@
   <title>Kids Sentence Reader - Rocket Launch</title>
   <style>
     html, body {
-      height: 100%;
       margin: 0;
+      height: 100%;
       font-family: Arial, sans-serif;
-      text-align: center;
       background: linear-gradient(to top, #001f3f, #87ceeb);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
+      overflow: hidden;
+      text-align: center;
     }
     h1 {
       color: white;
-      font-size: clamp(22px, 6vw, 36px);
-      margin: 10px;
+      font-size: clamp(24px, 6vw, 38px);
+      margin: 15px;
     }
     #sky {
       position: relative;
@@ -27,23 +28,33 @@
       max-width: 600px;
     }
     #sentence {
-      font-size: clamp(28px, 8vw, 56px); /* much bigger on mobile */
+      font-size: clamp(30px, 8vw, 56px);
       font-weight: bold;
       color: white;
+      background: rgba(0,0,0,0.6);
+      border-radius: 12px;
+      padding: 10px 15px;
+      max-width: 95%;
+      margin: auto;
       position: absolute;
-      top: 60px;
-      width: 100%;
-      text-align: center;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
       opacity: 0;
-      transition: opacity 1s, transform 1s;
-      transform: scale(0.8);
-      padding: 0 5vw;
+      transition: opacity 1s ease, transform 1s ease;
+      white-space: wrap;
     }
-    .highlight {
-      background-color: yellow;
+    .correct {
+      background: lightgreen;
       color: black;
+      border-radius: 6px;
       padding: 2px 4px;
-      border-radius: 4px;
+    }
+    .wrong {
+      background: #ff4e4e;
+      color: white;
+      border-radius: 6px;
+      padding: 2px 4px;
     }
     .rocket {
       width: 80px;
@@ -53,7 +64,7 @@
       bottom: 0;
       left: 50%;
       transform: translateX(-50%);
-      transition: bottom 1.5s ease-in;
+      transition: bottom 2s ease-in;
     }
     .rocket::before {
       content: "🚀";
@@ -67,9 +78,6 @@
       bottom: 5px;
       left: 50%;
       transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       opacity: 0;
     }
     .flame-cone {
@@ -78,27 +86,25 @@
       border-left: 18px solid transparent;
       border-right: 18px solid transparent;
       border-top: 50px solid orange;
-      margin-top: -6px;
-      filter: blur(1px);
       animation: flicker 0.2s infinite alternate;
     }
     .flame-cone.yellow {
       border-left: 12px solid transparent;
       border-right: 12px solid transparent;
       border-top: 35px solid yellow;
-      margin-top: -18px;
+      margin-top: -15px;
     }
     @keyframes flicker {
-      from { transform: scaleY(1); opacity: 0.9; }
-      to   { transform: scaleY(1.2); opacity: 1; }
+      from { transform: scaleY(1); opacity: 0.8; }
+      to { transform: scaleY(1.2); opacity: 1; }
     }
     .launch-btn {
-      width: 160px;
-      height: 60px;
-      border-radius: 12px;
+      width: 180px;
+      height: 65px;
+      border-radius: 14px;
       background: linear-gradient(135deg, #ff512f, #dd2476);
       color: white;
-      font-size: 22px;
+      font-size: 24px;
       font-weight: bold;
       border: none;
       cursor: pointer;
@@ -107,30 +113,29 @@
       transition: all 0.3s ease;
     }
     .launch-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 25px #ff512f;
+      transform: scale(1.05);
     }
     .button-container {
       display: flex;
+      gap: 20px;
       justify-content: center;
-      margin-bottom: 20px;
+      margin: 20px;
     }
-    .speak-btn {
+    .round-btn {
       width: 100px;
       height: 100px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-      color: white;
-      font-size: 24px;
+      font-size: 26px;
       border: none;
       cursor: pointer;
+      color: white;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
-    .speak-icon {
-      font-size: 40px;
+    .speak-btn {
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+    }
+    .listen-btn {
+      background: linear-gradient(135deg, #28a745, #218838);
     }
   </style>
 </head>
@@ -150,10 +155,13 @@
   <button class="launch-btn" onclick="launchRocket()">🚀 Launch</button>
 
   <div class="button-container">
-    <button class="speak-btn" onclick="speakSentence()">
-      <span class="speak-icon">🔊</span>
-    </button>
+    <button class="round-btn speak-btn" onclick="speakSentence()">🔊</button>
+    <button class="round-btn listen-btn" onclick="startListening()">🎤</button>
   </div>
+
+  <!-- Sounds -->
+  <audio id="rocketRoar" src="https://actions.google.com/sounds/v1/transportation/rocket_launch.ogg"></audio>
+  <audio id="kidsCheer" src="https://actions.google.com/sounds/v1/crowds/children_cheer.ogg"></audio>
 
   <script>
     const sentences = [
@@ -166,10 +174,6 @@
     ];
 
     let currentSentence = "";
-    let voices = [];
-
-    function loadVoices() { voices = speechSynthesis.getVoices(); }
-    window.speechSynthesis.onvoiceschanged = loadVoices;
 
     function getRandomSentence() {
       return sentences[Math.floor(Math.random() * sentences.length)];
@@ -180,1039 +184,74 @@
       const flames = document.getElementById("flames");
       const sentenceEl = document.getElementById("sentence");
 
-      rocket.style.bottom = "0px";
       sentenceEl.style.opacity = 0;
-      sentenceEl.style.transform = "scale(0.8)";
+      sentenceEl.textContent = "";
 
-      setTimeout(() => {
-        flames.style.opacity = 1;
-        rocket.style.bottom = "300px";
-      }, 100);
+      // Rocket launch
+      flames.style.opacity = 1;
+      rocket.style.bottom = "350px";
+      document.getElementById("rocketRoar").play();
 
       setTimeout(() => {
         flames.style.opacity = 0;
-        currentSentence = getRandomSentence();
-        sentenceEl.innerHTML = currentSentence;
-        sentenceEl.style.opacity = 1;
-        sentenceEl.style.transform = "scale(1)";
         rocket.style.bottom = "0px";
-      }, 1600);
+
+        currentSentence = getRandomSentence();
+        sentenceEl.textContent = currentSentence;
+        sentenceEl.style.opacity = 1;
+
+        document.getElementById("kidsCheer").play();
+      }, 2500);
     }
 
     function speakSentence() {
       if (!currentSentence) return;
-      speechSynthesis.cancel();
+      const msg = new SpeechSynthesisUtterance(currentSentence);
+      msg.lang = "en-IN";
+      msg.rate = 0.8;
+      msg.pitch = 1.0;
+      speechSynthesis.speak(msg);
+    }
 
-      const words = currentSentence.split(" ");
-      document.getElementById("sentence").innerHTML =
-        words.map(w => `<span>${w}</span>`).join(" ");
-
-      // Speak word-by-word for clearer voice on mobile
-      let i = 0;
-      function speakNext() {
-        if (i >= words.length) return;
-        let msg = new SpeechSynthesisUtterance(words[i]);
-        msg.lang = "en-IN";
-        msg.rate = 0.8;   // slower for mobile clarity
-        msg.pitch = 1.0;  // neutral pitch
-        let voice = voices.find(v => v.lang === "en-IN") || voices.find(v => v.lang.includes("en"));
-        if (voice) msg.voice = voice;
-        msg.onend = () => {
-          document.querySelectorAll("#sentence span").forEach(s => s.classList.remove("highlight"));
-          document.querySelectorAll("#sentence span")[i].classList.add("highlight");
-          i++;
-          setTimeout(speakNext, 250); // short pause
-        };
-        speechSynthesis.speak(msg);
+    function startListening() {
+      if (!currentSentence) {
+        alert("Launch the rocket first to get a sentence!");
+        return;
       }
-      speakNext();
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "en-IN";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.start();
+
+      recognition.onresult = (event) => {
+        const spoken = event.results[0][0].transcript;
+        showComparison(currentSentence, spoken);
+      };
+
+      recognition.onerror = (event) => {
+        alert("Error: " + event.error);
+      };
+    }
+
+    function showComparison(expected, spoken) {
+      const expectedWords = expected.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
+      const spokenWords = spoken.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
+      
+      let resultHTML = "";
+      expectedWords.forEach((word, i) => {
+        if (spokenWords[i] === word) {
+          resultHTML += `<span class="correct">${word}</span> `;
+        } else {
+          resultHTML += `<span class="wrong">${word}</span> `;
+        }
+      });
+
+      const sentenceEl = document.getElementById("sentence");
+      sentenceEl.innerHTML = resultHTML.trim();
+      sentenceEl.style.opacity = 1;
     }
   </script>
 </body>
 </html>
-
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Kids Sentence Reader - Rocket Launch</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 30px;
-      background: linear-gradient(to top, #001f3f, #87ceeb);
-      overflow: hidden;
-    }
-    #sky {
-      position: relative;
-      height: 400px;
-      margin-bottom: 20px;
-    }
-    #sentence {
-      font-size: 32px;
-      font-weight: bold;
-      color: white;
-      position: absolute;
-      top: 60px;
-      width: 100%;
-      text-align: center;
-      opacity: 0;
-      transition: opacity 1s, transform 1s;
-      transform: scale(0.8);
-    }
-    .highlight {
-      background-color: yellow;
-      color: black;
-      padding: 2px 4px;
-      border-radius: 4px;
-    }
-    .rocket {
-      width: 80px;
-      height: 160px;
-      margin: auto;
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      transition: bottom 1.5s ease-in;
-    }
-    .rocket::before {
-      content: "🚀";
-      font-size: 100px;
-      position: absolute;
-      top: -20px;
-      left: -10px;
-    }
-    .flames {
-      position: absolute;
-      bottom: 5px; /* closer to rocket */
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      opacity: 0;
-    }
-    .flame-cone {
-      width: 0;
-      height: 0;
-      border-left: 18px solid transparent;
-      border-right: 18px solid transparent;
-      border-top: 50px solid orange;
-      margin-top: -6px;
-      filter: blur(1px);
-      animation: flicker 0.2s infinite alternate;
-    }
-    .flame-cone.yellow {
-      border-left: 12px solid transparent;
-      border-right: 12px solid transparent;
-      border-top: 35px solid yellow;
-      margin-top: -18px;
-    }
-    @keyframes flicker {
-      from { transform: scaleY(1); opacity: 0.9; }
-      to   { transform: scaleY(1.2); opacity: 1; }
-    }
-    .smoke {
-      position: absolute;
-      bottom: -10px; /* closer to flames */
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: rgba(200,200,200,0.7);
-      animation: smokeRise 2s infinite;
-    }
-    @keyframes smokeRise {
-      0%   { transform: translateY(0) scale(1); opacity: 0.6; }
-      50%  { transform: translateY(20px) scale(1.2); opacity: 0.4; }
-      100% { transform: translateY(40px) scale(1.4); opacity: 0; }
-    }
-    .launch-btn {
-      width: 160px;
-      height: 60px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #ff512f, #dd2476);
-      color: white;
-      font-size: 22px;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-      margin-top: 20px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-    }
-    .launch-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 25px #ff512f;
-    }
-    .button-container {
-      display: flex;
-      justify-content: center;
-      margin-top: 20px;
-    }
-    .speak-btn {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-      color: white;
-      font-size: 24px;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .speak-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 30px #00c6ff;
-    }
-    .speak-icon {
-      font-size: 40px;
-    }
-  </style>
-</head>
-<body>
-  <h1>🚀 Launch the Rocket to Read! 🚀</h1>
-
-  <div id="sky">
-    <div id="sentence">Press Launch!</div>
-    <div class="rocket" id="rocket">
-      <div class="flames" id="flames">
-        <div class="flame-cone orange"></div>
-        <div class="flame-cone yellow"></div>
-      </div>
-      <div class="smoke" style="left:15px;"></div>
-      <div class="smoke" style="left:-20px; animation-delay:0.5s;"></div>
-    </div>
-  </div>
-
-  <button class="launch-btn" onclick="launchRocket()">🚀 Launch</button>
-
-  <div class="button-container">
-    <button class="speak-btn" onclick="speakSentence()">
-      <span class="speak-icon">🔊</span>
-    </button>
-  </div>
-
-  <script>
-const sentences = [
-      "The cat is sleeping on bed.",
-      "She is reading a small book.",
-      "We are playing with a red ball.",
-      "The dog runs across the park.",
-      "Birds are flying high in sky.",
-      "A boy is eating sweet mango.",
-      "They went to school by bus.",
-      "She has a doll in hand.",
-      "The baby is crying very loudly.",
-      "He drinks milk every single day.",
-      "The sun is shining very bright.",
-      "A rabbit is hopping in grass.",
-      "We saw stars twinkle at night.",
-      "The monkey climbs up the tree.",
-      "The fish swims in the pond.",
-      "She likes to paint with colors.",
-      "He runs faster than his friends.",
-      "The birds build nests in spring.",
-      "Children are playing in the park.",
-      "A butterfly sits on a flower.",
-      "The cow gives us fresh milk.",
-      "We ride bicycles on the road.",
-      "The girl sings a sweet song.",
-      "He is writing with a pencil.",
-      "The teacher is teaching the class.",
-      "The boy jumps into the pool.",
-      "The baby sleeps in the cradle.",
-      "The dog barks at the stranger.",
-      "She is cooking in the kitchen.",
-      "The kite is flying very high.",
-      "We are clapping our little hands.",
-      "The farmer works hard in field.",
-      "The bus stops near the school.",
-      "A frog is sitting on stone.",
-      "The stars twinkle in the sky.",
-      "We eat fruits to stay healthy.",
-      "The clock shows the right time.",
-      "He is cleaning the black board.",
-      "The children are reading the book.",
-      "A duck swims across the pond.",
-      "The train runs on the track.",
-      "We are drawing in our books.",
-      "The sun rises in the east.",
-      "The moon glows in the night.",
-      "She is dancing on the stage.",
-      "The lion roars loudly in jungle.",
-      "The elephant has a long trunk.",
-      "The tiger is a strong animal.",
-      "We drink water to stay cool.",
-      "The boy is planting a tree.",
-      "The flowers bloom in the garden.",
-      "The stars look like diamonds bright.",
-      "The parrot talks in a cage.",
-      "We love to play with toys.",
-      "The river flows into the sea.",
-      "The children laugh at the clown.",
-      "A dog is wagging its tail.",
-      "We are learning new English words.",
-      "The bus takes us to market.",
-      "The rabbit runs very fast away.",
-      "We can hear the school bell.",
-      "The frog jumps into the water.",
-      "We write letters with a pen.",
-      "The monkey eats bananas on tree.",
-      "We are looking at the rainbow.",
-      "The clouds cover the blue sky.",
-      "The horse runs across the field.",
-      "We are watching cartoons on TV.",
-      "The sparrow sits on the branch.",
-      "The baby is clapping tiny hands.",
-      "The girl brushes her little teeth.",
-      "The fish swims in clear water.",
-      "We go shopping with our parents.",
-      "The hen lays eggs every day.",
-      "The cow is eating green grass.",
-      "The dog wags tail happily always.",
-      "We are singing a happy song.",
-      "The butterfly flies over the flower.",
-      "The farmer waters plants in farm.",
-      "We go to temple every morning.",
-      "The candle is burning very bright.",
-      "The squirrel runs across the garden.",
-      "We see birds flying in sky.",
-      "The bus driver drives very safely.",
-      "The camel walks in hot desert.",
-      "We are eating rice and curry.",
-      "The boy is jumping on bed.",
-      "The girl is combing her hair.",
-      "The stars shine bright at night.",
-      "The owl hoots loudly in night.",
-      "The peacock dances when it rains.",
-      "The kids are shouting in joy.",
-      "We draw pictures with crayons today.",
-      "The dog sleeps near the gate.",
-      "We are drinking orange juice now."
-    ];
-
-    let currentSentence = "";
-    let voices = [];
-
-    function loadVoices() {
-      voices = speechSynthesis.getVoices();
-    }
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    function getRandomSentence() {
-      return sentences[Math.floor(Math.random() * sentences.length)];
-    }
-
-    function launchRocket() {
-      const rocket = document.getElementById("rocket");
-      const flames = document.getElementById("flames");
-      const sentenceEl = document.getElementById("sentence");
-
-      rocket.style.bottom = "0px";
-      sentenceEl.style.opacity = 0;
-      sentenceEl.style.transform = "scale(0.8)";
-
-      setTimeout(() => {
-        flames.style.opacity = 1;
-        rocket.style.bottom = "300px";
-      }, 100);
-
-      setTimeout(() => {
-        flames.style.opacity = 0;
-        currentSentence = getRandomSentence();
-        sentenceEl.innerHTML = currentSentence;
-        sentenceEl.style.opacity = 1;
-        sentenceEl.style.transform = "scale(1)";
-        rocket.style.bottom = "0px";
-      }, 1600);
-    }
-
-    function speakSentence() {
-      if (!currentSentence) return;
-
-      window.speechSynthesis.cancel();
-
-      const words = currentSentence.split(" ");
-      document.getElementById("sentence").innerHTML = words.map(w => `<span>${w}</span>`).join(" ");
-
-      let msg = new SpeechSynthesisUtterance(currentSentence);
-      msg.lang = "en-IN";
-      msg.rate = 0.6;
-      msg.pitch = 1.2;
-
-      let indianVoice = voices.find(v => v.lang === "en-IN");
-      if (indianVoice) msg.voice = indianVoice;
-
-      msg.onboundary = function(event) {
-        if (event.name === "word" || event.charIndex !== undefined) {
-          let spans = document.querySelectorAll("#sentence span");
-          spans.forEach(s => s.classList.remove("highlight"));
-          let spokenIndex = currentSentence.substring(0, event.charIndex).split(" ").length - 1;
-          if (spans[spokenIndex]) spans[spokenIndex].classList.add("highlight");
-        }
-      };
-
-      window.speechSynthesis.speak(msg);
-    }
-  </script>
-</body>
-</html> -->
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Kids Sentence Reader - Rocket Launch</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 30px;
-      background: linear-gradient(to top, #001f3f, #87ceeb);
-      overflow: hidden;
-    }
-    #sky {
-      position: relative;
-      height: 400px;
-      margin-bottom: 20px;
-    }
-    #sentence {
-      font-size: 32px;
-      font-weight: bold;
-      color: white;
-      position: absolute;
-      top: 60px;
-      width: 100%;
-      text-align: center;
-      opacity: 0;
-      transition: opacity 1s, transform 1s;
-      transform: scale(0.8);
-    }
-    .highlight {
-      background-color: yellow;
-      color: black;
-      padding: 2px 4px;
-      border-radius: 4px;
-    }
-    .rocket {
-      width: 80px;
-      height: 160px;
-      margin: auto;
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      transition: bottom 1.5s ease-in;
-    }
-    .rocket::before {
-      content: "🚀";
-      font-size: 100px;
-      position: absolute;
-      top: -20px;
-      left: -10px;
-    }
-    .flames {
-      position: absolute;
-      bottom: -20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      opacity: 0;
-    }
-    .flame {
-      width: 0;
-      height: 0;
-      border-left: 15px solid transparent;
-      border-right: 15px solid transparent;
-      border-top: 30px solid orange;
-      margin-top: -5px;
-      animation: flicker 0.2s infinite alternate;
-    }
-    .flame.yellow {
-      border-top-color: yellow;
-      border-left-width: 10px;
-      border-right-width: 10px;
-      border-top-width: 20px;
-    }
-    @keyframes flicker {
-      from { transform: scaleY(1); opacity: 0.8; }
-      to   { transform: scaleY(1.3); opacity: 1; }
-    }
-    .smoke {
-      position: absolute;
-      bottom: -40px;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: rgba(200,200,200,0.7);
-      animation: smokeRise 2s infinite;
-    }
-    @keyframes smokeRise {
-      0%   { transform: translateY(0) scale(1); opacity: 0.6; }
-      50%  { transform: translateY(20px) scale(1.3); opacity: 0.4; }
-      100% { transform: translateY(40px) scale(1.6); opacity: 0; }
-    }
-    .launch-btn {
-      width: 160px;
-      height: 60px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #ff512f, #dd2476);
-      color: white;
-      font-size: 22px;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-      margin-top: 20px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-    }
-    .launch-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 25px #ff512f;
-    }
-    .button-container {
-      display: flex;
-      justify-content: center;
-      margin-top: 20px;
-    }
-    .speak-btn {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-      color: white;
-      font-size: 24px;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .speak-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 30px #00c6ff;
-    }
-    .speak-icon {
-      font-size: 40px;
-    }
-  </style>
-</head>
-<body>
-  <h1>🚀 Launch the Rocket to Read! 🚀</h1>
-
-  <div id="sky">
-    <div id="sentence">Press Launch!</div>
-    <div class="rocket" id="rocket">
-      <div class="flames" id="flames">
-        <div class="flame orange"></div>
-        <div class="flame yellow"></div>
-      </div>
-      <div class="smoke" style="left:10px;"></div>
-      <div class="smoke" style="left:-20px; animation-delay:0.5s;"></div>
-    </div>
-  </div>
-
-  <button class="launch-btn" onclick="launchRocket()">🚀 Launch</button>
-
-  <div class="button-container">
-    <button class="speak-btn" onclick="speakSentence()">
-      <span class="speak-icon">🔊</span>
-    </button>
-  </div>
-
-  <script>
-    const sentences = [
-      "The cat is sleeping on bed.",
-      "She is reading a small book.",
-      "We are playing with a red ball.",
-      "The dog runs across the park.",
-      "Birds are flying high in sky.",
-      "A boy is eating sweet mango.",
-      "They went to school by bus.",
-      "She has a doll in hand.",
-      "The baby is crying very loudly.",
-      "He drinks milk every single day."
-    ];
-
-    let currentSentence = "";
-    let voices = [];
-
-    function loadVoices() {
-      voices = speechSynthesis.getVoices();
-    }
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    function getRandomSentence() {
-      return sentences[Math.floor(Math.random() * sentences.length)];
-    }
-
-    function launchRocket() {
-      const rocket = document.getElementById("rocket");
-      const flames = document.getElementById("flames");
-      const sentenceEl = document.getElementById("sentence");
-
-      rocket.style.bottom = "0px";
-      sentenceEl.style.opacity = 0;
-      sentenceEl.style.transform = "scale(0.8)";
-
-      setTimeout(() => {
-        flames.style.opacity = 1;
-        rocket.style.bottom = "300px";
-      }, 100);
-
-      setTimeout(() => {
-        flames.style.opacity = 0;
-        currentSentence = getRandomSentence();
-        sentenceEl.innerHTML = currentSentence;
-        sentenceEl.style.opacity = 1;
-        sentenceEl.style.transform = "scale(1)";
-        rocket.style.bottom = "0px";
-      }, 1600);
-    }
-
-    function speakSentence() {
-      if (!currentSentence) return;
-
-      window.speechSynthesis.cancel();
-
-      const words = currentSentence.split(" ");
-      document.getElementById("sentence").innerHTML = words.map(w => `<span>${w}</span>`).join(" ");
-
-      let msg = new SpeechSynthesisUtterance(currentSentence);
-      msg.lang = "en-IN";
-      msg.rate = 0.6;
-      msg.pitch = 1.2;
-
-      let indianVoice = voices.find(v => v.lang === "en-IN");
-      if (indianVoice) msg.voice = indianVoice;
-
-      msg.onboundary = function(event) {
-        if (event.name === "word" || event.charIndex !== undefined) {
-          let spans = document.querySelectorAll("#sentence span");
-          spans.forEach(s => s.classList.remove("highlight"));
-          let spokenIndex = currentSentence.substring(0, event.charIndex).split(" ").length - 1;
-          if (spans[spokenIndex]) spans[spokenIndex].classList.add("highlight");
-        }
-      };
-
-      window.speechSynthesis.speak(msg);
-    }
-  </script>
-</body>
-</html> -->
-
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Kids Sentence Reader - Rocket Launch</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 30px;
-      background: linear-gradient(to top, #001f3f, #87ceeb);
-      overflow: hidden;
-    }
-    #sky {
-      position: relative;
-      height: 400px;
-      margin-bottom: 20px;
-    }
-    #sentence {
-      font-size: 32px;
-      font-weight: bold;
-      color: white;
-      position: absolute;
-      top: 60px;
-      width: 100%;
-      text-align: center;
-      opacity: 0;
-      transition: opacity 1s, transform 1s;
-      transform: scale(0.8);
-    }
-    .highlight {
-      background-color: yellow;
-      color: black;
-      padding: 2px 4px;
-      border-radius: 4px;
-    }
-    .rocket {
-      width: 80px;
-      height: 160px;
-      margin: auto;
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      transition: bottom 1.5s ease-in;
-    }
-    .rocket::before {
-      content: "🚀";
-      font-size: 100px;
-      position: absolute;
-      top: -20px;
-      left: -10px;
-    }
-    .flame {
-      position: absolute;
-      bottom: -30px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 20px;
-      height: 40px;
-      background: radial-gradient(circle, orange, red, transparent);
-      border-radius: 50%;
-      animation: flicker 0.2s infinite;
-      opacity: 0;
-    }
-    @keyframes flicker {
-      0% { transform: translateX(-50%) scaleY(1); opacity: 0.8; }
-      50% { transform: translateX(-50%) scaleY(1.3); opacity: 1; }
-      100% { transform: translateX(-50%) scaleY(1); opacity: 0.6; }
-    }
-    .launch-btn {
-      width: 160px;
-      height: 60px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #ff512f, #dd2476);
-      color: white;
-      font-size: 22px;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-      margin-top: 20px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-    }
-    .launch-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 25px #ff512f;
-    }
-    .button-container {
-      display: flex;
-      justify-content: center;
-      margin-top: 20px;
-    }
-    .speak-btn {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-      color: white;
-      font-size: 24px;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .speak-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 30px #00c6ff;
-    }
-    .speak-icon {
-      font-size: 40px;
-    }
-  </style>
-</head>
-<body>
-  <h1>🚀 Launch the Rocket to Read! 🚀</h1>
-
-  <div id="sky">
-    <div id="sentence">Press Launch!</div>
-    <div class="rocket" id="rocket">
-      <div class="flame" id="flame"></div>
-    </div>
-  </div>
-
-  <button class="launch-btn" onclick="launchRocket()">🚀 Launch</button>
-
-  <div class="button-container">
-    <button class="speak-btn" onclick="speakSentence()">
-      <span class="speak-icon">🔊</span>
-    </button>
-  </div>
-
-  <script>
-    const sentences = [
-      "The cat is sleeping on bed.",
-      "She is reading a small book.",
-      "We are playing with a red ball.",
-      "The dog runs across the park.",
-      "Birds are flying high in sky.",
-      "A boy is eating sweet mango.",
-      "They went to school by bus.",
-      "She has a doll in hand.",
-      "The baby is crying very loudly.",
-      "He drinks milk every single day."
-    ];
-
-    let currentSentence = "";
-    let voices = [];
-
-    function loadVoices() {
-      voices = speechSynthesis.getVoices();
-    }
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    function getRandomSentence() {
-      return sentences[Math.floor(Math.random() * sentences.length)];
-    }
-
-    function launchRocket() {
-      const rocket = document.getElementById("rocket");
-      const flame = document.getElementById("flame");
-      const sentenceEl = document.getElementById("sentence");
-
-      // reset
-      rocket.style.bottom = "0px";
-      sentenceEl.style.opacity = 0;
-      sentenceEl.style.transform = "scale(0.8)";
-
-      setTimeout(() => {
-        flame.style.opacity = 1;
-        rocket.style.bottom = "300px"; // rocket flies
-      }, 100);
-
-      setTimeout(() => {
-        flame.style.opacity = 0;
-        currentSentence = getRandomSentence();
-        sentenceEl.innerHTML = currentSentence;
-        sentenceEl.style.opacity = 1;
-        sentenceEl.style.transform = "scale(1)";
-        rocket.style.bottom = "0px"; // reset rocket down
-      }, 1600);
-    }
-
-    function speakSentence() {
-      if (!currentSentence) return;
-
-      window.speechSynthesis.cancel();
-
-      const words = currentSentence.split(" ");
-      document.getElementById("sentence").innerHTML = words.map(w => `<span>${w}</span>`).join(" ");
-
-      let msg = new SpeechSynthesisUtterance(currentSentence);
-      msg.lang = "en-IN";
-      msg.rate = 0.6;
-      msg.pitch = 1.2;
-
-      let indianVoice = voices.find(v => v.lang === "en-IN");
-      if (indianVoice) msg.voice = indianVoice;
-
-      msg.onboundary = function(event) {
-        if (event.name === "word" || event.charIndex !== undefined) {
-          let spans = document.querySelectorAll("#sentence span");
-          spans.forEach(s => s.classList.remove("highlight"));
-          let spokenIndex = currentSentence.substring(0, event.charIndex).split(" ").length - 1;
-          if (spans[spokenIndex]) spans[spokenIndex].classList.add("highlight");
-        }
-      };
-
-      window.speechSynthesis.speak(msg);
-    }
-  </script>
-</body>
-</html> -->
-
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Kids Sentence Reader - Rocket Launch</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 30px;
-      background: linear-gradient(to top, #001f3f, #87ceeb);
-      overflow: hidden;
-    }
-    #sky {
-      position: relative;
-      height: 400px;
-      margin-bottom: 20px;
-    }
-    #sentence {
-      font-size: 32px;
-      font-weight: bold;
-      color: white;
-      position: absolute;
-      top: 50px;
-      width: 100%;
-      text-align: center;
-      opacity: 0;
-      transition: opacity 1s;
-    }
-    .highlight {
-      background-color: yellow;
-      color: black;
-      padding: 2px 4px;
-      border-radius: 4px;
-    }
-    .rocket {
-      width: 80px;
-      height: 160px;
-      background: red;
-      border-radius: 40px 40px 10px 10px;
-      margin: auto;
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      transition: bottom 3s ease;
-    }
-    .rocket::before {
-      content: "🚀";
-      font-size: 100px;
-      position: absolute;
-      top: -30px;
-      left: -10px;
-    }
-    .launch-btn {
-      width: 160px;
-      height: 60px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #ff512f, #dd2476);
-      color: white;
-      font-size: 22px;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-      margin-top: 20px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-    }
-    .launch-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 25px #ff512f;
-    }
-    .speak-btn {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-      color: white;
-      font-size: 24px;
-      border: none;
-      cursor: pointer;
-      margin-top: 20px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-    }
-    .speak-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 30px #00c6ff;
-    }
-    .speak-icon {
-      font-size: 40px;
-    }
-  </style>
-</head>
-<body>
-  <h1>🚀 Launch the Rocket to Read! 🚀</h1>
-
-  <div id="sky">
-    <div id="sentence">Press Launch!</div>
-    <div class="rocket" id="rocket"></div>
-  </div>
-
-  <button class="launch-btn" onclick="launchRocket()">🚀 Launch</button>
-
-  <div>
-    <button class="speak-btn" onclick="speakSentence()">
-      <span class="speak-icon">🔊</span>
-    </button>
-  </div>
-
-  <script>
-    const sentences = [
-      "The cat is sleeping on bed.",
-      "She is reading a small book.",
-      "We are playing with a red ball.",
-      "The dog runs across the park.",
-      "Birds are flying high in sky.",
-      "A boy is eating sweet mango.",
-      "They went to school by bus.",
-      "She has a doll in hand.",
-      "The baby is crying very loudly.",
-      "He drinks milk every single day."
-    ];
-
-    let currentSentence = "";
-    let voices = [];
-
-    function loadVoices() {
-      voices = speechSynthesis.getVoices();
-    }
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    function getRandomSentence() {
-      return sentences[Math.floor(Math.random() * sentences.length)];
-    }
-
-    function launchRocket() {
-      const rocket = document.getElementById("rocket");
-      const sentenceEl = document.getElementById("sentence");
-
-      rocket.style.bottom = "300px"; // animate rocket up
-      sentenceEl.style.opacity = 0;
-
-      setTimeout(() => {
-        currentSentence = getRandomSentence();
-        sentenceEl.innerHTML = currentSentence;
-        sentenceEl.style.opacity = 1;
-        rocket.style.bottom = "0px"; // reset rocket down after launch
-      }, 3000);
-    }
-
-    function speakSentence() {
-      if (!currentSentence) return;
-
-      window.speechSynthesis.cancel();
-
-      const words = currentSentence.split(" ");
-      document.getElementById("sentence").innerHTML = words.map(w => `<span>${w}</span>`).join(" ");
-
-      let msg = new SpeechSynthesisUtterance(currentSentence);
-      msg.lang = "en-IN";
-      msg.rate = 0.6;
-      msg.pitch = 1.2;
-
-      let indianVoice = voices.find(v => v.lang === "en-IN");
-      if (indianVoice) msg.voice = indianVoice;
-
-      msg.onboundary = function(event) {
-        if (event.name === "word" || event.charIndex !== undefined) {
-          let spans = document.querySelectorAll("#sentence span");
-          spans.forEach(s => s.classList.remove("highlight"));
-          let spokenIndex = currentSentence.substring(0, event.charIndex).split(" ").length - 1;
-          if (spans[spokenIndex]) spans[spokenIndex].classList.add("highlight");
-        }
-      };
-
-      window.speechSynthesis.speak(msg);
-    }
-  </script>
-</body>
-</html> -->
