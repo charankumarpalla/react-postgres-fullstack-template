@@ -1,9 +1,10 @@
 <!-- 
-Version: v1.0.8
+Version: v1.1.0
 Changes:
-- Fixed desktop layout while keeping mobile scroll
-- Used min-height:100vh + flexbox column layout
-- Allow result panel to expand without breaking alignment
+- Fixed issue where corrections didn’t show after adding recording
+- Now: SpeechRecognition runs first → correction shown
+- After recognition stops, MediaRecorder captures and shows playback
+- Sentence/results panel still above rocket
 -->
 
 <!DOCTYPE html>
@@ -16,7 +17,7 @@ Changes:
     html, body {
       margin: 0;
       padding: 0;
-      min-height: 100vh; /* ✅ always full height */
+      min-height: 100vh;
       font-family: Arial, sans-serif;
       background: linear-gradient(to top, #001f3f, #87ceeb);
       display: flex;
@@ -30,24 +31,15 @@ Changes:
       font-size: clamp(24px, 6vw, 38px);
       margin: 12px;
     }
-    #sky {
-      position: relative;
-      flex: 1;
-      width: 100%;
-      max-width: 600px;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-    }
 
     /* ✅ Result Panel */
     #result-panel {
-      margin-top: 12px;
+      margin: 10px auto;
       padding: 12px;
       background: rgba(0,0,0,0.5);
       border-radius: 14px;
       max-width: 95%;
-      display: none; /* hidden until recording finishes */
+      display: none;
       word-wrap: break-word;
     }
     #result-panel > div, #result-panel audio {
@@ -99,6 +91,15 @@ Changes:
     .wrong { background: #ff4e4e; color: white; border-radius: 6px; padding: 2px 4px; }
     .extra { background: orange; color: white; border-radius: 6px; padding: 2px 4px; }
 
+    #sky {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
     .rocket {
       width: 60px;
       height: 120px;
@@ -178,7 +179,7 @@ Changes:
     footer {
       font-size: 10px;
       color: rgba(255,255,255,0.6);
-      margin-top: auto; /* ✅ pushes footer to bottom */
+      margin-top: auto;
       padding: 6px;
       font-family: monospace;
     }
@@ -186,6 +187,18 @@ Changes:
 </head>
 <body>
   <h1>🚀 Launch the Rocket to Read! 🚀</h1>
+
+  <!-- ✅ Sentence + Results Above Rocket -->
+  <div id="result-panel">
+    <div id="sentence">Press Launch!</div>
+    <div id="spoken"></div>
+    <div id="extras"></div>
+    <div id="accuracy">
+      <div id="accuracy-bar"></div>
+      <div id="accuracy-label">0/10</div>
+    </div>
+    <audio id="playback" controls style="display:none"></audio>
+  </div>
 
   <div id="sky">
     <div class="rocket" id="rocket">
@@ -204,23 +217,11 @@ Changes:
     <button class="round-btn stop-btn" onclick="stopListening()">🛑</button>
   </div>
 
-  <!-- ✅ Result Panel -->
-  <div id="result-panel">
-    <div id="sentence">Press Launch!</div>
-    <div id="spoken"></div>
-    <div id="extras"></div>
-    <div id="accuracy">
-      <div id="accuracy-bar"></div>
-      <div id="accuracy-label">0/10</div>
-    </div>
-    <audio id="playback" controls style="display:none"></audio>
-  </div>
-
   <!-- Sounds -->
   <audio id="rocketRoar" src="https://actions.google.com/sounds/v1/transportation/rocket_launch.ogg"></audio>
   <audio id="kidsCheer" src="https://actions.google.com/sounds/v1/crowds/children_cheer.ogg"></audio>
 
-  <footer>v1.0.8</footer>
+  <footer>v1.1.0</footer>
 
   <script>
     const sentences = [
@@ -275,7 +276,7 @@ Changes:
       speechSynthesis.speak(msg);
     }
 
-    async function startListening() {
+    function startListening() {
       if (!currentSentence) {
         alert("Launch the rocket first to get a sentence!");
         return;
@@ -298,32 +299,34 @@ Changes:
         silenceTimer = setTimeout(() => recognition.stop(), 3000);
       };
 
-      recognition.onend = () => {
+      recognition.onend = async () => {
         if (transcripts.length > 0) {
           let longest = transcripts.reduce((a, b) => (b.split(" ").length > a.split(" ").length ? b : a));
           showComparison(currentSentence, longest);
+
+          // ✅ Now record after recognition stops
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+              const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+              const audioUrl = URL.createObjectURL(audioBlob);
+              const playback = document.getElementById("playback");
+              playback.src = audioUrl;
+              playback.style.display = "block";
+              playback.load();
+            };
+            mediaRecorder.start();
+            setTimeout(() => mediaRecorder.stop(), 3000); // record short snippet
+          } catch (err) {
+            console.error("Mic error:", err);
+          }
         }
       };
 
       recognition.start();
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = () => {
-          const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-          const audioUrl = URL.createObjectURL(audioBlob);
-          const playback = document.getElementById("playback");
-          playback.src = audioUrl;
-          playback.style.display = "block";
-          playback.load();
-        };
-        mediaRecorder.start();
-      } catch (err) {
-        console.error("Mic error:", err);
-      }
     }
 
     function stopListening() {
@@ -351,13 +354,7 @@ Changes:
 
       let extras = spokenWords.filter(w => !expectedWords.includes(w));
       const extrasEl = document.getElementById("extras");
-      if (extras.length > 0) {
-        extrasEl.innerHTML = "Extras: " + extras.map(w => `<span class="extra">${w}</span>`).join(" ");
-        extrasEl.style.opacity = 1;
-      } else {
-        extrasEl.innerHTML = "";
-        extrasEl.style.opacity = 0;
-      }
+      extrasEl.innerHTML = extras.length > 0 ? "Extras: " + extras.map(w => `<span class="extra">${w}</span>`).join(" ") : "";
 
       document.getElementById("sentence").innerHTML = resultHTML.trim();
       document.getElementById("spoken").textContent = "You said: " + spoken;
