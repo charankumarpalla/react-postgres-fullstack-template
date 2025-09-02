@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- ✅ Responsive -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kids Sentence Reader - Rocket Launch</title>
   <style>
     html, body {
@@ -14,13 +14,12 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      overflow: hidden;
       text-align: center;
     }
 
     h1 {
       color: white;
-      font-size: clamp(24px, 6vw, 38px);
+      font-size: clamp(22px, 5vw, 36px);
       margin: 10px;
     }
 
@@ -89,86 +88,67 @@
       cursor: pointer;
       margin: 10px 0;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
     }
-    .launch-btn:hover { transform: scale(1.05); }
-
     .button-container {
       display: flex;
-      gap: 20px;
+      gap: 15px;
       justify-content: center;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
     }
     .round-btn {
-      width: 90px;
-      height: 90px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
-      font-size: 26px;
+      font-size: 24px;
       border: none;
       cursor: pointer;
       color: white;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
     }
-    .speak-btn {
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-    }
-    .listen-btn {
-      background: linear-gradient(135deg, #28a745, #218838);
-    }
-    .stop-btn {
-      background: linear-gradient(135deg, #ff0000, #cc0000);
-    }
+    .speak-btn { background: linear-gradient(135deg, #00c6ff, #0072ff); }
+    .listen-btn { background: linear-gradient(135deg, #28a745, #218838); }
+    .stop-btn { background: linear-gradient(135deg, #ff0000, #cc0000); }
 
     /* 📊 Results Panel */
     #result-panel {
-      margin-top: 12px;
-      padding: 12px;
+      margin: 10px auto;
+      padding: 10px;
       background: rgba(0,0,0,0.5);
       border-radius: 14px;
       max-width: 95%;
-      display: none;
-    }
-    #result-panel > div {
-      margin: 6px 0;
+      width: 95%;
     }
     #sentence {
-      font-size: clamp(28px, 8vw, 54px);
+      font-size: clamp(22px, 6vw, 44px);
       font-weight: bold;
       color: white;
-      border-radius: 12px;
-      padding: 8px 14px;
-      opacity: 0;
-      transition: opacity 1s ease;
+      margin-bottom: 6px;
     }
     #spoken {
-      font-size: clamp(20px, 6vw, 32px);
+      font-size: clamp(18px, 5vw, 30px);
       font-weight: bold;
       color: #fffacd;
-      border-radius: 10px;
-      opacity: 0;
-      transition: opacity 0.8s ease;
+      margin-bottom: 6px;
     }
     #extras {
-      font-size: clamp(18px, 5vw, 28px);
+      font-size: clamp(16px, 4vw, 26px);
       color: orange;
-      opacity: 0;
-      transition: opacity 0.8s ease;
+      margin-bottom: 6px;
     }
 
     /* 📊 Accuracy Bar */
     #accuracy {
-      margin-top: 6px;
+      margin-top: 4px;
       width: 90%;
-      max-width: 400px;
-      height: 30px;
+      max-width: 350px;
+      height: 28px;
       background: #ddd;
       border-radius: 20px;
       overflow: hidden;
       margin-left: auto;
       margin-right: auto;
       position: relative;
-      opacity: 0;
-      transition: opacity 0.8s ease;
     }
     #accuracy-bar {
       height: 100%;
@@ -182,6 +162,7 @@
       left: 50%;
       transform: translateX(-50%);
       font-weight: bold;
+      font-size: 14px;
       color: black;
     }
 
@@ -204,7 +185,7 @@
 <body>
   <h1>🚀 Launch the Rocket to Read! 🚀</h1>
 
-  <!-- Result Panel -->
+  <!-- Results -->
   <div id="result-panel">
     <div id="sentence">Press Launch!</div>
     <div id="spoken"></div>
@@ -213,7 +194,7 @@
       <div id="accuracy-bar"></div>
       <div id="accuracy-label">0/10</div>
     </div>
-    <audio id="playback" controls></audio>
+    <audio id="playback" controls style="margin-top:8px; width:90%;"></audio>
   </div>
 
   <!-- Rocket -->
@@ -238,7 +219,7 @@
   <audio id="rocketRoar" src="https://actions.google.com/sounds/v1/transportation/rocket_launch.ogg"></audio>
   <audio id="kidsCheer" src="https://actions.google.com/sounds/v1/crowds/children_cheer.ogg"></audio>
 
-  <footer id="footer">v1.0.4</footer> <!-- ✅ Version -->
+  <footer>v1.0.5</footer>
 
   <script>
     const sentences = [
@@ -249,7 +230,6 @@
       "Birds are flying high in sky.",
       "A boy is eating sweet mango."
     ];
-
     let currentSentence = "";
     let recognition, mediaRecorder;
     let transcripts = [];
@@ -265,11 +245,11 @@
       const sentenceEl = document.getElementById("sentence");
       const spokenEl = document.getElementById("spoken");
 
-      sentenceEl.style.opacity = 0;
       sentenceEl.textContent = "";
-      spokenEl.style.opacity = 0;
       spokenEl.textContent = "";
-      document.getElementById("result-panel").style.display = "none";
+      document.getElementById("extras").textContent = "";
+      document.getElementById("accuracy-bar").style.width = "0%";
+      document.getElementById("accuracy-label").textContent = "0/10";
 
       flames.style.opacity = 1;
       rocket.style.bottom = "180px";  
@@ -278,13 +258,9 @@
       setTimeout(() => {
         flames.style.opacity = 0;
         rocket.style.bottom = "0px";
-
         currentSentence = getRandomSentence();
         sentenceEl.textContent = currentSentence;
-        sentenceEl.style.opacity = 1;
-
         document.getElementById("kidsCheer").play();
-        document.getElementById("result-panel").style.display = "block";
       }, 2000);
     }
 
@@ -300,17 +276,15 @@
 
     async function startListening() {
       if (!currentSentence) {
-        alert("Launch the rocket first to get a sentence!");
+        alert("Launch the rocket first!");
         return;
       }
-      if (recognition) {
-        recognition.stop();
-      }
+      if (recognition) recognition.stop();
       transcripts = [];
+
       recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = "en-IN";
       recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
 
       let silenceTimer;
       recognition.onresult = (event) => {
@@ -323,19 +297,17 @@
         silenceTimer = setTimeout(() => {
           recognition.stop();
           if (mediaRecorder) mediaRecorder.stop();
-        }, 3000);
+        }, 2000);
       };
       recognition.onend = () => {
         if (transcripts.length > 0) {
-          let longest = transcripts.reduce((a, b) =>
-            b.split(" ").length > a.split(" ").length ? b : a
-          );
+          let longest = transcripts.reduce((a, b) => (b.split(" ").length > a.split(" ").length ? b : a));
           showComparison(currentSentence, longest);
         }
       };
       recognition.start();
 
-      // Record audio
+      // 🎤 Record audio
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         audioChunks = [];
@@ -343,33 +315,27 @@
         mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
         mediaRecorder.onstop = () => {
           const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-          const audioUrl = URL.createObjectURL(audioBlob);
           const playback = document.getElementById("playback");
-          playback.src = audioUrl;
-          playback.style.display = "block";
+          playback.src = URL.createObjectURL(audioBlob);
         };
         mediaRecorder.start();
       } catch (err) {
-        console.error("Microphone access denied:", err);
-        alert("Microphone access is required.");
+        console.error(err);
+        alert("Microphone access denied.");
       }
     }
 
     function stopListening() {
       if (recognition) recognition.stop();
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-      }
+      if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
     }
 
     function showComparison(expected, spoken) {
-      document.getElementById("result-panel").style.display = "block";
       const expectedWords = expected.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
       const spokenWords = spoken.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
       
       let resultHTML = "";
       let correctCount = 0;
-
       expectedWords.forEach(word => {
         if (spokenWords.includes(word)) {
           resultHTML += `<span class="correct">${word}</span> `;
@@ -379,30 +345,15 @@
         }
       });
 
-      const extrasEl = document.getElementById("extras");
-      let extras = spokenWords.filter(w => !expectedWords.includes(w));
-      if (extras.length > 0) {
-        extrasEl.innerHTML = "Extras: " + extras.map(w => `<span class="extra">${w}</span>`).join(" ");
-        extrasEl.style.opacity = 1;
-      } else {
-        extrasEl.innerHTML = "";
-        extrasEl.style.opacity = 0;
-      }
-
       document.getElementById("sentence").innerHTML = resultHTML.trim();
-      document.getElementById("sentence").style.opacity = 1;
-      const spokenEl = document.getElementById("spoken");
-      spokenEl.textContent = "You said: " + spoken;
-      spokenEl.style.opacity = 1;
+      document.getElementById("spoken").textContent = "You said: " + spoken;
 
-      // Accuracy
+      let extras = spokenWords.filter(w => !expectedWords.includes(w));
+      document.getElementById("extras").textContent = extras.length ? "Extras: " + extras.join(" ") : "";
+
       let accuracy = Math.round((correctCount / expectedWords.length) * 10);
-      const accuracyEl = document.getElementById("accuracy");
-      const bar = document.getElementById("accuracy-bar");
-      const label = document.getElementById("accuracy-label");
-      accuracyEl.style.opacity = 1;
-      bar.style.width = (accuracy * 10) + "%";
-      label.textContent = accuracy + "/10";
+      document.getElementById("accuracy-bar").style.width = (accuracy * 10) + "%";
+      document.getElementById("accuracy-label").textContent = accuracy + "/10";
     }
   </script>
 </body>
