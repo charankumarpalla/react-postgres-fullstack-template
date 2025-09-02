@@ -17,6 +17,43 @@
       overflow: hidden;
       text-align: center;
     }
+    #extras {
+      font-size: clamp(18px, 5vw, 28px);
+      color: orange;
+      margin-top: 6px;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+
+    #accuracy {
+      margin-top: 10px;
+      width: 80%;
+      max-width: 400px;
+      height: 30px;
+      background: #ddd;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+
+    #accuracy-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(135deg, #ffcc00, #ff6600);
+      transition: width 1s ease;
+    }
+    #accuracy-label {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: bold;
+      color: black;
+    }
     h1 {
       color: white;
       font-size: clamp(24px, 6vw, 38px);
@@ -174,6 +211,11 @@
 
   <div id="sentence">Press Launch!</div>
   <div id="spoken"></div>
+  <div id="extras"></div>
+<div id="accuracy">
+  <div id="accuracy-bar"></div>
+  <div id="accuracy-label">0/10</div>
+</div>
 
   <div id="sky">
     <div class="rocket" id="rocket">
@@ -313,39 +355,49 @@
       const spokenWords = spoken.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
       
       let resultHTML = "";
-      let maxLen = Math.max(expectedWords.length, spokenWords.length);
       let correctCount = 0;
 
-      for (let i = 0; i < maxLen; i++) {
-        const expectedWord = expectedWords[i];
-        const spokenWord = spokenWords[i];
-
-        if (expectedWord && spokenWord) {
-          if (expectedWord === spokenWord) {
-            resultHTML += `<span class="correct">${expectedWord}</span> `;
-            correctCount++;
-          } else {
-            resultHTML += `<span class="wrong">${expectedWord}</span> `;
-          }
-        } 
-        else if (expectedWord && !spokenWord) {
-          resultHTML += `<span class="wrong">${expectedWord}</span> `;
-        } 
-        else if (!expectedWord && spokenWord) {
-          resultHTML += `<span class="extra">${spokenWord}</span> `;
+      expectedWords.forEach(word => {
+        if (spokenWords.includes(word)) {
+          resultHTML += `<span class="correct">${word}</span> `;
+          correctCount++;
+        } else {
+          resultHTML += `<span class="wrong">${word}</span> `;
         }
+      });
+
+      // Extras
+      let extras = spokenWords.filter(w => !expectedWords.includes(w));
+      const extrasEl = document.getElementById("extras");
+      if (extras.length > 0) {
+        extrasEl.innerHTML = "Extras: " + extras.map(w => `<span class="extra">${w}</span>`).join(" ");
+        extrasEl.style.opacity = 1;
+      } else {
+        extrasEl.innerHTML = "";
+        extrasEl.style.opacity = 0;
       }
 
+      // Show expected with highlights
       const sentenceEl = document.getElementById("sentence");
       const spokenEl = document.getElementById("spoken");
 
       sentenceEl.innerHTML = resultHTML.trim();
       sentenceEl.style.opacity = 1;
 
-      let accuracy = Math.round((correctCount / expectedWords.length) * 10);
-      spokenEl.textContent = "You said: " + spoken + " | Accuracy: " + accuracy + "/10";
+      spokenEl.textContent = "You said: " + spoken;
       spokenEl.style.opacity = 1;
+
+      // Accuracy progress bar
+      let accuracy = Math.round((correctCount / expectedWords.length) * 10);
+      const accuracyEl = document.getElementById("accuracy");
+      const bar = document.getElementById("accuracy-bar");
+      const label = document.getElementById("accuracy-label");
+
+      accuracyEl.style.opacity = 1;
+      bar.style.width = (accuracy * 10) + "%"; // 0–100%
+      label.textContent = accuracy + "/10";
     }
+
   </script>
 </body>
 </html>
