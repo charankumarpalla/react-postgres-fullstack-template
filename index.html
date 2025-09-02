@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8">
   <title>Kids Sentence Reader - Rocket Launch</title>
   <style>
@@ -15,6 +16,14 @@
       justify-content: flex-start;
       overflow: hidden;
       text-align: center;
+    }
+        footer {
+      font-size: 10px;
+      color: rgba(255,255,255,0.6);
+      position: absolute;
+      bottom: 4px;
+      right: 8px;
+      font-family: monospace;
     }
     h1 {
       color: white;
@@ -327,6 +336,9 @@ function showComparison(expected, spoken) {
 }
 
   </script>
+    <footer id="footer">
+    v1.0.1
+  </footer>
 </body>
 </html>
 
