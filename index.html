@@ -17,90 +17,14 @@
       overflow: hidden;
       text-align: center;
     }
+
     h1 {
       color: white;
       font-size: clamp(24px, 6vw, 38px);
       margin: 10px;
     }
-    #sentence {
-      font-size: clamp(28px, 8vw, 54px);
-      font-weight: bold;
-      color: white;
-      background: rgba(0,0,0,0.6);
-      border-radius: 12px;
-      padding: 8px 14px;
-      max-width: 95%;
-      margin: 8px auto;
-      position: relative;
-      opacity: 0;
-      transition: opacity 1s ease;
-      z-index: 5;
-    }
-    #spoken {
-      font-size: clamp(20px, 6vw, 32px);
-      font-weight: bold;
-      color: #fffacd;
-      background: rgba(0,0,0,0.4);
-      border-radius: 10px;
-      padding: 6px 10px;
-      max-width: 95%;
-      margin: 5px auto 10px;
-      opacity: 0;
-      transition: opacity 0.8s ease;
-    }
-    #extras {
-      font-size: clamp(18px, 5vw, 28px);
-      color: orange;
-      margin-top: 6px;
-      opacity: 0;
-      transition: opacity 0.8s ease;
-    }
-    #accuracy {
-      margin-top: 10px;
-      width: 80%;
-      max-width: 400px;
-      height: 30px;
-      background: #ddd;
-      border-radius: 20px;
-      overflow: hidden;
-      margin-left: auto;
-      margin-right: auto;
-      position: relative;
-      opacity: 0;
-      transition: opacity 0.8s ease;
-    }
-    #accuracy-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(135deg, #ffcc00, #ff6600);
-      transition: width 1s ease;
-    }
-    #accuracy-label {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      font-weight: bold;
-      color: black;
-    }
-    .correct {
-      background: lightgreen;
-      color: black;
-      border-radius: 6px;
-      padding: 2px 4px;
-    }
-    .wrong {
-      background: #ff4e4e;
-      color: white;
-      border-radius: 6px;
-      padding: 2px 4px;
-    }
-    .extra {
-      background: orange;
-      color: white;
-      border-radius: 6px;
-      padding: 2px 4px;
-    }
+
+    /* 🚀 Rocket Area */
     #sky {
       position: relative;
       flex: 1;
@@ -151,6 +75,8 @@
       from { transform: scaleY(1); opacity: 0.8; }
       to { transform: scaleY(1.2); opacity: 1; }
     }
+
+    /* 🎛 Buttons */
     .launch-btn {
       width: 180px;
       height: 65px;
@@ -163,15 +89,15 @@
       cursor: pointer;
       margin: 10px 0;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      transition: all 0.3s ease;
     }
-    .launch-btn:hover {
-      transform: scale(1.05);
-    }
+    .launch-btn:hover { transform: scale(1.05); }
+
     .button-container {
       display: flex;
       gap: 20px;
       justify-content: center;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
     }
     .round-btn {
       width: 90px;
@@ -183,13 +109,88 @@
       color: white;
       box-shadow: 0 0 20px rgba(0,0,0,0.3);
     }
-    .speak-btn { background: linear-gradient(135deg, #00c6ff, #0072ff); }
-    .listen-btn { background: linear-gradient(135deg, #28a745, #218838); }
-    .stop-btn { background: linear-gradient(135deg, #ff0000, #cc0000); }
-    #playback {
+    .speak-btn {
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+    }
+    .listen-btn {
+      background: linear-gradient(135deg, #28a745, #218838);
+    }
+    .stop-btn {
+      background: linear-gradient(135deg, #ff0000, #cc0000);
+    }
+
+    /* 📊 Results Panel */
+    #result-panel {
       margin-top: 12px;
+      padding: 12px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 14px;
+      max-width: 95%;
       display: none;
     }
+    #result-panel > div {
+      margin: 6px 0;
+    }
+    #sentence {
+      font-size: clamp(28px, 8vw, 54px);
+      font-weight: bold;
+      color: white;
+      border-radius: 12px;
+      padding: 8px 14px;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+    #spoken {
+      font-size: clamp(20px, 6vw, 32px);
+      font-weight: bold;
+      color: #fffacd;
+      border-radius: 10px;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    #extras {
+      font-size: clamp(18px, 5vw, 28px);
+      color: orange;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+
+    /* 📊 Accuracy Bar */
+    #accuracy {
+      margin-top: 6px;
+      width: 90%;
+      max-width: 400px;
+      height: 30px;
+      background: #ddd;
+      border-radius: 20px;
+      overflow: hidden;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    #accuracy-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(135deg, #ffcc00, #ff6600);
+      transition: width 1s ease;
+    }
+    #accuracy-label {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: bold;
+      color: black;
+    }
+
+    /* ✅ Highlights */
+    .correct { background: lightgreen; color: black; border-radius: 6px; padding: 2px 4px; }
+    .wrong   { background: #ff4e4e; color: white; border-radius: 6px; padding: 2px 4px; }
+    .extra   { background: orange; color: white; border-radius: 6px; padding: 2px 4px; }
+
+    /* 📌 Footer */
     footer {
       font-size: 10px;
       color: rgba(255,255,255,0.6);
@@ -203,15 +204,19 @@
 <body>
   <h1>🚀 Launch the Rocket to Read! 🚀</h1>
 
-  <div id="sentence">Press Launch!</div>
-  <div id="spoken"></div>
-  <div id="extras"></div>
-  <div id="accuracy">
-    <div id="accuracy-bar"></div>
-    <div id="accuracy-label">0/10</div>
+  <!-- Result Panel -->
+  <div id="result-panel">
+    <div id="sentence">Press Launch!</div>
+    <div id="spoken"></div>
+    <div id="extras"></div>
+    <div id="accuracy">
+      <div id="accuracy-bar"></div>
+      <div id="accuracy-label">0/10</div>
+    </div>
+    <audio id="playback" controls></audio>
   </div>
-  <audio id="playback" controls></audio>
 
+  <!-- Rocket -->
   <div id="sky">
     <div class="rocket" id="rocket">
       <div class="flames" id="flames">
@@ -221,8 +226,8 @@
     </div>
   </div>
 
+  <!-- Buttons -->
   <button class="launch-btn" onclick="launchRocket()">🚀 Launch</button>
-
   <div class="button-container">
     <button class="round-btn speak-btn" onclick="speakSentence()">🔊</button>
     <button class="round-btn listen-btn" onclick="startListening()">🎤</button>
@@ -233,7 +238,7 @@
   <audio id="rocketRoar" src="https://actions.google.com/sounds/v1/transportation/rocket_launch.ogg"></audio>
   <audio id="kidsCheer" src="https://actions.google.com/sounds/v1/crowds/children_cheer.ogg"></audio>
 
-  <footer id="footer">v1.0.3</footer>
+  <footer id="footer">v1.0.4</footer> <!-- ✅ Version -->
 
   <script>
     const sentences = [
@@ -246,9 +251,8 @@
     ];
 
     let currentSentence = "";
-    let recognition;
+    let recognition, mediaRecorder;
     let transcripts = [];
-    let mediaRecorder;
     let audioChunks = [];
 
     function getRandomSentence() {
@@ -260,16 +264,15 @@
       const flames = document.getElementById("flames");
       const sentenceEl = document.getElementById("sentence");
       const spokenEl = document.getElementById("spoken");
-      const extrasEl = document.getElementById("extras");
 
       sentenceEl.style.opacity = 0;
       sentenceEl.textContent = "";
       spokenEl.style.opacity = 0;
       spokenEl.textContent = "";
-      extrasEl.style.opacity = 0;
+      document.getElementById("result-panel").style.display = "none";
 
       flames.style.opacity = 1;
-      rocket.style.bottom = "180px";
+      rocket.style.bottom = "180px";  
       document.getElementById("rocketRoar").play();
 
       setTimeout(() => {
@@ -281,6 +284,7 @@
         sentenceEl.style.opacity = 1;
 
         document.getElementById("kidsCheer").play();
+        document.getElementById("result-panel").style.display = "block";
       }, 2000);
     }
 
@@ -299,11 +303,9 @@
         alert("Launch the rocket first to get a sentence!");
         return;
       }
-
       if (recognition) {
         recognition.stop();
       }
-
       transcripts = [];
       recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = "en-IN";
@@ -311,7 +313,6 @@
       recognition.maxAlternatives = 1;
 
       let silenceTimer;
-
       recognition.onresult = (event) => {
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
@@ -324,26 +325,22 @@
           if (mediaRecorder) mediaRecorder.stop();
         }, 3000);
       };
-
       recognition.onend = () => {
         if (transcripts.length > 0) {
-          let longest = transcripts.reduce((a, b) => (b.split(" ").length > a.split(" ").length ? b : a));
+          let longest = transcripts.reduce((a, b) =>
+            b.split(" ").length > a.split(" ").length ? b : a
+          );
           showComparison(currentSentence, longest);
         }
       };
-
       recognition.start();
 
-      // Start recording
+      // Record audio
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         audioChunks = [];
         mediaRecorder = new MediaRecorder(stream);
-
-        mediaRecorder.ondataavailable = (e) => {
-          audioChunks.push(e.data);
-        };
-
+        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
         mediaRecorder.onstop = () => {
           const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
           const audioUrl = URL.createObjectURL(audioBlob);
@@ -351,7 +348,6 @@
           playback.src = audioUrl;
           playback.style.display = "block";
         };
-
         mediaRecorder.start();
       } catch (err) {
         console.error("Microphone access denied:", err);
@@ -367,9 +363,10 @@
     }
 
     function showComparison(expected, spoken) {
+      document.getElementById("result-panel").style.display = "block";
       const expectedWords = expected.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
       const spokenWords = spoken.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
-
+      
       let resultHTML = "";
       let correctCount = 0;
 
@@ -382,9 +379,8 @@
         }
       });
 
-      // Extras
-      let extras = spokenWords.filter(w => !expectedWords.includes(w));
       const extrasEl = document.getElementById("extras");
+      let extras = spokenWords.filter(w => !expectedWords.includes(w));
       if (extras.length > 0) {
         extrasEl.innerHTML = "Extras: " + extras.map(w => `<span class="extra">${w}</span>`).join(" ");
         extrasEl.style.opacity = 1;
@@ -393,20 +389,17 @@
         extrasEl.style.opacity = 0;
       }
 
-      const sentenceEl = document.getElementById("sentence");
+      document.getElementById("sentence").innerHTML = resultHTML.trim();
+      document.getElementById("sentence").style.opacity = 1;
       const spokenEl = document.getElementById("spoken");
-
-      sentenceEl.innerHTML = resultHTML.trim();
-      sentenceEl.style.opacity = 1;
-
       spokenEl.textContent = "You said: " + spoken;
       spokenEl.style.opacity = 1;
 
+      // Accuracy
       let accuracy = Math.round((correctCount / expectedWords.length) * 10);
       const accuracyEl = document.getElementById("accuracy");
       const bar = document.getElementById("accuracy-bar");
       const label = document.getElementById("accuracy-label");
-
       accuracyEl.style.opacity = 1;
       bar.style.width = (accuracy * 10) + "%";
       label.textContent = accuracy + "/10";
