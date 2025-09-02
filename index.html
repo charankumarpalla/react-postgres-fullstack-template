@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- ✅ Responsive -->
   <title>Kids Sentence Reader - Rocket Launch</title>
   <style>
     html, body {
@@ -17,14 +17,6 @@
       overflow: hidden;
       text-align: center;
     }
-        footer {
-      font-size: 10px;
-      color: rgba(255,255,255,0.6);
-      position: absolute;
-      bottom: 4px;
-      right: 8px;
-      font-family: monospace;
-    }
     h1 {
       color: white;
       font-size: clamp(24px, 6vw, 38px);
@@ -37,7 +29,7 @@
       max-width: 600px;
       display: flex;
       flex-direction: column;
-      justify-content: flex-end; /* rocket stays low */
+      justify-content: flex-end;
     }
     #sentence {
       font-size: clamp(28px, 8vw, 54px);
@@ -78,6 +70,12 @@
       border-radius: 6px;
       padding: 2px 4px;
     }
+    .extra {
+      background: orange;
+      color: white;
+      border-radius: 6px;
+      padding: 2px 4px;
+    }
     .rocket {
       width: 60px;
       height: 120px;
@@ -101,12 +99,6 @@
       transform: translateX(-50%);
       opacity: 0;
     }
-    .extra {
-  background: orange;
-  color: white;
-  border-radius: 6px;
-  padding: 2px 4px;
-}
     .flame-cone {
       width: 0;
       height: 0;
@@ -164,6 +156,17 @@
     .listen-btn {
       background: linear-gradient(135deg, #28a745, #218838);
     }
+    .stop-btn {
+      background: linear-gradient(135deg, #ff0000, #cc0000);
+    }
+    footer {
+      font-size: 10px;
+      color: rgba(255,255,255,0.6);
+      position: fixed;
+      bottom: 4px;
+      right: 8px;
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
@@ -186,11 +189,14 @@
   <div class="button-container">
     <button class="round-btn speak-btn" onclick="speakSentence()">🔊</button>
     <button class="round-btn listen-btn" onclick="startListening()">🎤</button>
+    <button class="round-btn stop-btn" onclick="stopListening()">🛑</button>
   </div>
 
   <!-- Sounds -->
   <audio id="rocketRoar" src="https://actions.google.com/sounds/v1/transportation/rocket_launch.ogg"></audio>
   <audio id="kidsCheer" src="https://actions.google.com/sounds/v1/crowds/children_cheer.ogg"></audio>
+
+  <footer id="footer">v1.0.2</footer> <!-- ✅ Version updated -->
 
   <script>
     const sentences = [
@@ -203,6 +209,8 @@
     ];
 
     let currentSentence = "";
+    let recognition;
+    let transcripts = []; // ✅ collect all attempts
 
     function getRandomSentence() {
       return sentences[Math.floor(Math.random() * sentences.length)];
@@ -235,349 +243,13 @@
       }, 2000);
     }
 
-function speakSentence() {
-  if (!currentSentence) return;
-  const msg = new SpeechSynthesisUtterance(currentSentence);
-  msg.lang = "en-IN";
-  msg.rate = 0.6;   // ⬅️ slower speech
-  msg.pitch = 1.0;
-  speechSynthesis.cancel(); // stop previous before starting new
-  speechSynthesis.speak(msg);
-}
-
-    let recognition; // global
-
-function startListening() {
-  if (!currentSentence) {
-    alert("Launch the rocket first to get a sentence!");
-    return;
-  }
-
-  // Stop old recognition if running
-  if (recognition) {
-    recognition.onresult = null;
-    recognition.onerror = null;
-    recognition.onend = null;
-    recognition.stop();
-  }
-
-  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = "en-IN";
-  recognition.interimResults = true;
-  recognition.maxAlternatives = 1;
-
-  let silenceTimer;
-  let finalTranscript = "";
-
-  recognition.onresult = (event) => {
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-      if (event.results[i].isFinal) {
-        finalTranscript += event.results[i][0].transcript + " ";
-      }
-    }
-    clearTimeout(silenceTimer);
-    silenceTimer = setTimeout(() => {
-      recognition.stop(); // stop after 2s silence
-    }, 2000);
-  };
-
-  recognition.onend = () => {
-    if (finalTranscript.trim().length > 0) {
-      showComparison(currentSentence, finalTranscript.trim());
-    } else {
-      alert("No speech detected. Try again!");
-    }
-  };
-
-  recognition.onerror = (event) => {
-    alert("Error: " + event.error);
-  };
-
-  recognition.start();
-}
-
-
-function showComparison(expected, spoken) {
-  const expectedWords = expected.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
-  const spokenWords = spoken.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
-  
-  let resultHTML = "";
-  let maxLen = Math.max(expectedWords.length, spokenWords.length);
-
-  for (let i = 0; i < maxLen; i++) {
-    const expectedWord = expectedWords[i];
-    const spokenWord = spokenWords[i];
-
-    if (expectedWord && spokenWord) {
-      if (expectedWord === spokenWord) {
-        resultHTML += `<span class="correct">${expectedWord}</span> `;
-      } else {
-        resultHTML += `<span class="wrong">${expectedWord}</span> `;
-      }
-    } 
-    else if (expectedWord && !spokenWord) {
-      // Missing word
-      resultHTML += `<span class="wrong">${expectedWord}</span> `;
-    } 
-    else if (!expectedWord && spokenWord) {
-      // Extra spoken word
-      resultHTML += `<span class="extra">${spokenWord}</span> `;
-    }
-  }
-
-  const sentenceEl = document.getElementById("sentence");
-  const spokenEl = document.getElementById("spoken");
-
-  sentenceEl.innerHTML = resultHTML.trim();
-  sentenceEl.style.opacity = 1;
-
-  spokenEl.textContent = "You said: " + spoken;
-  spokenEl.style.opacity = 1;
-}
-
-  </script>
-    <footer id="footer">
-    v1.0.1
-  </footer>
-</body>
-</html>
-
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Kids Sentence Reader - Rocket Launch</title>
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to top, #001f3f, #87ceeb);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      overflow: hidden;
-      text-align: center;
-    }
-    h1 {
-      color: white;
-      font-size: clamp(24px, 6vw, 38px);
-      margin: 15px;
-    }
-    #sky {
-      position: relative;
-      flex: 1;
-      width: 100%;
-      max-width: 600px;
-    }
-    #sentence {
-      font-size: clamp(30px, 8vw, 56px);
-      font-weight: bold;
-      color: white;
-      background: rgba(0,0,0,0.6);
-      border-radius: 12px;
-      padding: 10px 15px;
-      max-width: 95%;
-      margin: auto;
-      position: absolute;
-      top: 20px;  /* moved higher */
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity 1s ease, transform 1s ease;
-      white-space: wrap;
-      z-index: 5; /* sentence always above rocket */
-    }
-    #spoken {
-      font-size: clamp(20px, 6vw, 36px);
-      font-weight: bold;
-      color: #fffacd;
-      background: rgba(0,0,0,0.4);
-      border-radius: 12px;
-      padding: 8px 12px;
-      max-width: 95%;
-      margin: auto;
-      position: absolute;
-      top: 90px; /* below the main sentence */
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity 0.8s ease;
-      z-index: 4;
-    }
-    .correct {
-      background: lightgreen;
-      color: black;
-      border-radius: 6px;
-      padding: 2px 4px;
-    }
-    .wrong {
-      background: #ff4e4e;
-      color: white;
-      border-radius: 6px;
-      padding: 2px 4px;
-    }
-    .rocket {
-      width: 60px;   /* smaller rocket */
-      height: 120px;
-      margin: auto;
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      transition: bottom 2s ease-in;
-      z-index: 1; /* stays below sentence */
-    }
-    .rocket::before {
-      content: "🚀";
-      font-size: 80px;  /* smaller emoji */
-      position: absolute;
-      top: -10px;
-      left: -5px;
-    }
-    .flames {
-      position: absolute;
-      bottom: 5px;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-    }
-    .flame-cone {
-      width: 0;
-      height: 0;
-      border-left: 14px solid transparent;
-      border-right: 14px solid transparent;
-      border-top: 40px solid orange;
-      animation: flicker 0.2s infinite alternate;
-    }
-    .flame-cone.yellow {
-      border-left: 10px solid transparent;
-      border-right: 10px solid transparent;
-      border-top: 28px solid yellow;
-      margin-top: -12px;
-    }
-    @keyframes flicker {
-      from { transform: scaleY(1); opacity: 0.8; }
-      to { transform: scaleY(1.2); opacity: 1; }
-    }
-    .launch-btn {
-      width: 180px;
-      height: 65px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #ff512f, #dd2476);
-      color: white;
-      font-size: 24px;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-      margin: 15px 0;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-    }
-    .launch-btn:hover {
-      transform: scale(1.05);
-    }
-    .button-container {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      margin: 20px;
-    }
-    .round-btn {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      font-size: 26px;
-      border: none;
-      cursor: pointer;
-      color: white;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-    }
-    .speak-btn {
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-    }
-    .listen-btn {
-      background: linear-gradient(135deg, #28a745, #218838);
-    }
-  </style>
-</head>
-<body>
-  <h1>🚀 Launch the Rocket to Read! 🚀</h1>
-
-  <div id="sky">
-    <div id="sentence">Press Launch!</div>
-    <div id="spoken"></div>
-    <div class="rocket" id="rocket">
-      <div class="flames" id="flames">
-        <div class="flame-cone orange"></div>
-        <div class="flame-cone yellow"></div>
-      </div>
-    </div>
-  </div>
-
-  <button class="launch-btn" onclick="launchRocket()">🚀 Launch</button>
-
-  <div class="button-container">
-    <button class="round-btn speak-btn" onclick="speakSentence()">🔊</button>
-    <button class="round-btn listen-btn" onclick="startListening()">🎤</button>
-  </div>
-
-  <audio id="rocketRoar" src="https://actions.google.com/sounds/v1/transportation/rocket_launch.ogg"></audio>
-  <audio id="kidsCheer" src="https://actions.google.com/sounds/v1/crowds/children_cheer.ogg"></audio>
-
-  <script>
-    const sentences = [
-      "The cat is sleeping on bed.",
-      "She is reading a small book.",
-      "We are playing with a red ball.",
-      "The dog runs across the park.",
-      "Birds are flying high in sky.",
-      "A boy is eating sweet mango."
-    ];
-
-    let currentSentence = "";
-
-    function getRandomSentence() {
-      return sentences[Math.floor(Math.random() * sentences.length)];
-    }
-
-    function launchRocket() {
-      const rocket = document.getElementById("rocket");
-      const flames = document.getElementById("flames");
-      const sentenceEl = document.getElementById("sentence");
-      const spokenEl = document.getElementById("spoken");
-
-      sentenceEl.style.opacity = 0;
-      sentenceEl.textContent = "";
-      spokenEl.style.opacity = 0;
-      spokenEl.textContent = "";
-
-      // Rocket launch
-      flames.style.opacity = 1;
-      rocket.style.bottom = "250px";  
-      document.getElementById("rocketRoar").play();
-
-      setTimeout(() => {
-        flames.style.opacity = 0;
-        rocket.style.bottom = "0px";
-
-        currentSentence = getRandomSentence();
-        sentenceEl.textContent = currentSentence;
-        sentenceEl.style.opacity = 1;
-
-        document.getElementById("kidsCheer").play();
-      }, 2000);
-    }
-
     function speakSentence() {
       if (!currentSentence) return;
       const msg = new SpeechSynthesisUtterance(currentSentence);
       msg.lang = "en-IN";
-      msg.rate = 0.8;
+      msg.rate = 0.6;
       msg.pitch = 1.0;
+      speechSynthesis.cancel();
       speechSynthesis.speak(msg);
     }
 
@@ -587,32 +259,37 @@ function showComparison(expected, spoken) {
         return;
       }
 
-      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      if (recognition) {
+        recognition.onresult = null;
+        recognition.onerror = null;
+        recognition.onend = null;
+        recognition.stop();
+      }
+
+      transcripts = []; // reset
+      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = "en-IN";
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
       let silenceTimer;
-      let finalTranscript = "";
 
       recognition.onresult = (event) => {
-        let interim = "";
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript + " ";
-          } else {
-            interim += event.results[i][0].transcript;
+            transcripts.push(event.results[i][0].transcript.trim());
           }
         }
         clearTimeout(silenceTimer);
         silenceTimer = setTimeout(() => {
-          recognition.stop(); // stop after 2s silence
-        }, 2000);
+          recognition.stop();
+        }, 3000); // ✅ wait longer idle (3s)
       };
 
       recognition.onend = () => {
-        if (finalTranscript.trim().length > 0) {
-          showComparison(currentSentence, finalTranscript.trim());
+        if (transcripts.length > 0) {
+          let longest = transcripts.reduce((a, b) => (b.split(" ").length > a.split(" ").length ? b : a));
+          showComparison(currentSentence, longest);
         } else {
           alert("No speech detected. Try again!");
         }
@@ -625,18 +302,39 @@ function showComparison(expected, spoken) {
       recognition.start();
     }
 
+    function stopListening() {
+      if (recognition) {
+        recognition.stop(); // ✅ manually stop
+      }
+    }
+
     function showComparison(expected, spoken) {
       const expectedWords = expected.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
       const spokenWords = spoken.toLowerCase().replace(/[^\w\s]/g, "").split(" ");
       
       let resultHTML = "";
-      expectedWords.forEach((word, i) => {
-        if (spokenWords[i] === word) {
-          resultHTML += `<span class="correct">${word}</span> `;
-        } else {
-          resultHTML += `<span class="wrong">${word}</span> `;
+      let maxLen = Math.max(expectedWords.length, spokenWords.length);
+      let correctCount = 0;
+
+      for (let i = 0; i < maxLen; i++) {
+        const expectedWord = expectedWords[i];
+        const spokenWord = spokenWords[i];
+
+        if (expectedWord && spokenWord) {
+          if (expectedWord === spokenWord) {
+            resultHTML += `<span class="correct">${expectedWord}</span> `;
+            correctCount++;
+          } else {
+            resultHTML += `<span class="wrong">${expectedWord}</span> `;
+          }
+        } 
+        else if (expectedWord && !spokenWord) {
+          resultHTML += `<span class="wrong">${expectedWord}</span> `;
+        } 
+        else if (!expectedWord && spokenWord) {
+          resultHTML += `<span class="extra">${spokenWord}</span> `;
         }
-      });
+      }
 
       const sentenceEl = document.getElementById("sentence");
       const spokenEl = document.getElementById("spoken");
@@ -644,9 +342,10 @@ function showComparison(expected, spoken) {
       sentenceEl.innerHTML = resultHTML.trim();
       sentenceEl.style.opacity = 1;
 
-      spokenEl.textContent = "You said: " + spoken;
+      let accuracy = Math.round((correctCount / expectedWords.length) * 10);
+      spokenEl.textContent = "You said: " + spoken + " | Accuracy: " + accuracy + "/10";
       spokenEl.style.opacity = 1;
     }
   </script>
 </body>
-</html> -->
+</html>
